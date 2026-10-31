@@ -1,6 +1,7 @@
 package com.pulse.camerapulse
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
@@ -53,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun startCamera() {
         backgroundThread = HandlerThread("CameraBg").also { it.start() }
         backgroundHandler = Handler(backgroundThread!!.looper)
@@ -99,32 +101,30 @@ class MainActivity : AppCompatActivity() {
             }, backgroundHandler)
         }
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            manager.openCamera(backCameraId, object : CameraDevice.StateCallback() {
-                override fun onOpened(camera: CameraDevice) {
-                    cameraDevice = camera
-                    val reader = imageReader ?: return
-                    val req = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                        addTarget(reader.surface)
-                        set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH)
-                        set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
-                        set(CaptureRequest.CONTROL_AE_LOCK, true)
-                        set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO)
-                        set(CaptureRequest.CONTROL_AWB_LOCK, true)
-                        set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
-                    }
-                    camera.createCaptureSession(listOf(reader.surface), object : CameraCaptureSession.StateCallback() {
-                        override fun onConfigured(session: CameraCaptureSession) {
-                            captureSession = session
-                            session.setRepeatingRequest(req.build(), null, backgroundHandler)
-                        }
-                        override fun onConfigureFailed(s: CameraCaptureSession) {}
-                    }, backgroundHandler)
+        manager.openCamera(backCameraId, object : CameraDevice.StateCallback() {
+            override fun onOpened(camera: CameraDevice) {
+                cameraDevice = camera
+                val reader = imageReader ?: return
+                val req = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                    addTarget(reader.surface)
+                    set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH)
+                    set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                    set(CaptureRequest.CONTROL_AE_LOCK, true)
+                    set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO)
+                    set(CaptureRequest.CONTROL_AWB_LOCK, true)
+                    set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
                 }
-                override fun onDisconnected(c: CameraDevice) { c.close() }
-                override fun onError(c: CameraDevice, err: Int) { c.close() }
-            }, backgroundHandler)
-        }
+                camera.createCaptureSession(listOf(reader.surface), object : CameraCaptureSession.StateCallback() {
+                    override fun onConfigured(session: CameraCaptureSession) {
+                        captureSession = session
+                        session.setRepeatingRequest(req.build(), null, backgroundHandler)
+                    }
+                    override fun onConfigureFailed(s: CameraCaptureSession) {}
+                }, backgroundHandler)
+            }
+            override fun onDisconnected(c: CameraDevice) { c.close() }
+            override fun onError(c: CameraDevice, err: Int) { c.close() }
+        }, backgroundHandler)
     }
 
     override fun onDestroy() {
