@@ -29,7 +29,7 @@ jobs:
       - name: Build APK with Wrapper
         run: |
           gradle wrapper --gradle-version 8.8
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug -Pandroid.useAndroidX=true -Pandroid.nonTransitiveRClass=true --no-daemon
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
