@@ -3,34 +3,193 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:background="#121212"
-    android:padding="24dp">
+    android:background="#101216"
+    android:padding="16dp">
 
-    <TextView
-        android:id="@+id/tvInstruction"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Place finger gently over camera &amp; flash"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:layout_marginBottom="32dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
 
-    <TextView
-        android:id="@+id/tvBpm"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="-- BPM"
-        android:textColor="#FF5252"
-        android:textSize="56sp"
-        android:textStyle="bold" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="POLYGRAPH CONSOLE"
+            android:textColor="#E0E0E0"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/tvHrv"
-        android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/tvStatusBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CALIBRATING"
+            android:textColor="#FFB300"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:padding="6dp"
+            android:background="#262A33" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:max="100"
+        android:progress="0"
+        android:layout_marginBottom="14dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="HRV (RMSSD): -- ms"
-        android:textColor="#B0BEC5"
-        android:textSize="20sp"
-        android:layout_marginTop="16dp" />
+        android:orientation="vertical"
+        android:background="#181B22"
+        android:padding="14dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/tvQuestionTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BASELINE CALIBRATION"
+            android:textColor="#8F9CAE"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvQuestionText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hold finger steady over lens &amp; flash. Establishing resting autonomic baseline..."
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnAction"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Calibrating (15s)..."
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2E7D32"
+            android:enabled="false" />
+    </LinearLayout>
+
+    <com.pulse.camerapulse.WaveformView
+        android:id="@+id/waveformView"
+        android:layout_width="match_parent"
+        android:layout_height="110dp"
+        android:background="#14171E"
+        android:layout_marginBottom="12dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:layout_marginBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="#181B22"
+            android:padding="10dp"
+            android:layout_marginEnd="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HEART RATE"
+                android:textColor="#8F9CAE"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tvBpmLive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- BPM"
+                android:textColor="#FF5252"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvBpmBaseline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Base: -- BPM"
+                android:textColor="#78909C"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="#181B22"
+            android:padding="10dp"
+            android:layout_marginStart="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HRV (RMSSD)"
+                android:textColor="#8F9CAE"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tvHrvLive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- ms"
+                android:textColor="#40C4FF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvHrvBaseline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Base: -- ms"
+                android:textColor="#78909C"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutVerdict"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#1E222B"
+        android:padding="12dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvVerdictTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AWAITING CALIBRATION"
+            android:textColor="#B0BEC5"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvVerdictSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Maintain light finger contact to establish autonomic baseline."
+            android:textColor="#78909C"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp"
+            android:gravity="center" />
+    </LinearLayout>
+
 </LinearLayout>

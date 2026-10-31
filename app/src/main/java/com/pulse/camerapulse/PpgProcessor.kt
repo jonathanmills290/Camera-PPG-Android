@@ -1,9 +1,13 @@
 package com.pulse.camerapulse
 
 import java.util.ArrayDeque
+import kotlin.math.abs
 import kotlin.math.sqrt
 
-class PpgProcessor(private val onMetricsUpdate: (bpm: Double, rmssd: Double) -> Unit) {
+class PpgProcessor(
+    private val onMetricsUpdate: (bpm: Double, rmssd: Double) -> Unit,
+    private val onWaveformSample: (Float) -> Unit
+) {
     private var lastPeakTime = 0L
     private val rrIntervals = ArrayDeque<Long>(30)
 
@@ -11,11 +15,21 @@ class PpgProcessor(private val onMetricsUpdate: (bpm: Double, rmssd: Double) -> 
     private var highPassVal = 0.0
     private val alphaLow = 0.25
     private val alphaHigh = 0.03
+    private var maxAmp = 2.0
 
     fun processPpgSample(rawIntensity: Double, timestamp: Long) {
         lowPassVal += alphaLow * (rawIntensity - lowPassVal)
         highPassVal += alphaHigh * (lowPassVal - highPassVal)
         val filtered = lowPassVal - highPassVal
+
+        val absVal = abs(filtered)
+        if (absVal > maxAmp) {
+            maxAmp = absVal
+        } else {
+            maxAmp = maxAmp * 0.995 + 0.005 * 2.0
+        }
+        val normalized = (filtered / maxAmp).toFloat()
+        onWaveformSample(normalized)
 
         val elapsed = timestamp - lastPeakTime
         if (filtered > 2.0 && elapsed > 330) {
