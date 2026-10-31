@@ -31,8 +31,11 @@ class PpgProcessor(
         val normalized = (filtered / maxAmp).toFloat()
         onWaveformSample(normalized)
 
+        // Dynamic thresholding: auto-scales to offset/recessed flash
+        val adaptiveThreshold = (maxAmp * 0.35).coerceIn(0.5, 2.5)
+
         val elapsed = timestamp - lastPeakTime
-        if (filtered > 2.0 && elapsed > 330) {
+        if (filtered > adaptiveThreshold && elapsed > 330) {
             if (lastPeakTime > 0 && elapsed in 330..1500) {
                 rrIntervals.addLast(elapsed)
                 if (rrIntervals.size > 20) rrIntervals.removeFirst()

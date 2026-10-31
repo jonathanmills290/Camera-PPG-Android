@@ -11,6 +11,7 @@ import android.media.ImageReader
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.speech.tts.TextToSpeech
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -18,8 +19,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.util.Locale
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var tvStatusBadge: TextView
     private lateinit var progressBar: ProgressBar
@@ -37,6 +39,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var ppgProcessor: PpgProcessor
     private lateinit var polygraphEngine: PolygraphEngine
+
+    private var tts: TextToSpeech? = null
+    private var isTtsReady = false
 
     private var cameraDevice: CameraDevice? = null
     private var captureSession: CameraCaptureSession? = null
@@ -62,12 +67,27 @@ class MainActivity : AppCompatActivity() {
         tvVerdictTitle = findViewById(R.id.tvVerdictTitle)
         tvVerdictSubtitle = findViewById(R.id.tvVerdictSubtitle)
 
+        tts = TextToSpeech(this, this)
+
         setupPolygraph()
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 101)
         } else {
             startCamera()
+        }
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts?.language = Locale.US
+            isTtsReady = true
+        }
+    }
+
+    private fun speak(text: String) {
+        if (isTtsReady) {
+            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "PolygraphTTS")
         }
     }
 
@@ -105,12 +125,15 @@ class MainActivity : AppCompatActivity() {
                 val started = polygraphEngine.startNextQuestion()
                 if (started) {
                     val qIndex = polygraphEngine.currentQuestionIndex + 1
+                    val qText = polygraphEngine.questions[polygraphEngine.currentQuestionIndex]
                     tvQuestionTitle.text = "QUESTION $qIndex OF ${polygraphEngine.questions.size}"
-                    tvQuestionText.text = polygraphEngine.questions[polygraphEngine.currentQuestionIndex]
+                    tvQuestionText.text = qText
                     btnAction.text = "Recording Response (8s)..."
                     btnAction.isEnabled = false
                     btnAction.setBackgroundColor(Color.parseColor("#E65100"))
                     waveformView.setWaveformColor(Color.parseColor("#FFD600"))
+
+                    speak("Question $qIndex. $qText Answer now.")
                 }
             } else if (polygraphEngine.state == PolygraphState.COMPLETE) {
                 polygraphEngine.reset()
@@ -125,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                 tvStatusBadge.text = "PLACE FINGER"
                 tvStatusBadge.setTextColor(Color.parseColor("#FFB300"))
                 tvQuestionTitle.text = "SENSOR INITIALIZATION"
-                tvQuestionText.text = "Place index finger gently over camera lens and flash..."
+                tvQuestionText.text = "Rest index finger gently over camera lens and flash..."
                 btnAction.text = "Awaiting Contact"
                 btnAction.isEnabled = false
                 btnAction.setBackgroundColor(Color.parseColor("#37474F"))
@@ -140,6 +163,7 @@ class MainActivity : AppCompatActivity() {
                 btnAction.isEnabled = false
                 btnAction.setBackgroundColor(Color.parseColor("#00838F"))
                 waveformView.setWaveformColor(Color.parseColor("#00E676"))
+                speak("Establishing baseline. Please keep your finger still.")
             }
             PolygraphState.READY -> {
                 tvStatusBadge.text = "BASELINE READY"
@@ -154,6 +178,7 @@ class MainActivity : AppCompatActivity() {
                 btnAction.isEnabled = true
                 btnAction.setBackgroundColor(Color.parseColor("#2E7D32"))
                 waveformView.setWaveformColor(Color.parseColor("#00E676"))
+                speak("Baseline locked. Ready for question $qNum. Tap screen when ready.")
             }
             PolygraphState.QUESTION_ACTIVE -> {
                 tvStatusBadge.text = "ANALYZING"
@@ -168,6 +193,7 @@ class MainActivity : AppCompatActivity() {
                 btnAction.text = "Restart Polygraph Exam"
                 btnAction.isEnabled = true
                 btnAction.setBackgroundColor(Color.parseColor("#1565C0"))
+                speak("Examination complete. All responses analyzed.")
             }
         }
     }
@@ -177,21 +203,27 @@ class MainActivity : AppCompatActivity() {
         val deltaHrv = result.baselineHrv - result.minHrv
 
         tvVerdictTitle.text = result.verdict
-        tvVerdictSubtitle.text = "Stress Score: ${result.stressScore}% | ΔBPM: +${deltaBpm.toInt()} | ΔHRV: -${deltaHrv.toInt()}ms"
+        tvVerdictSubtitle.text = "Stress: ${result.stressScore}% | ΔBPM: +${deltaBpm.toInt()} | ΔHRV: -${deltaHrv.toInt()}ms"
 
+        val spokenVerdict: String
         if (result.isDeceptionAnomaly) {
             layoutVerdict.setBackgroundColor(Color.parseColor("#3E1B1B"))
             tvVerdictTitle.setTextColor(Color.parseColor("#FF5252"))
             waveformView.setWaveformColor(Color.parseColor("#FF1744"))
+            spokenVerdict = "Deception anomaly detected. Significant autonomic response."
         } else if (result.stressScore < 35) {
             layoutVerdict.setBackgroundColor(Color.parseColor("#1B3320"))
             tvVerdictTitle.setTextColor(Color.parseColor("#69F0AE"))
             waveformView.setWaveformColor(Color.parseColor("#00E676"))
+            spokenVerdict = "Truth indicated. Physiological indicators calm."
         } else {
             layoutVerdict.setBackgroundColor(Color.parseColor("#382E18"))
             tvVerdictTitle.setTextColor(Color.parseColor("#FFD740"))
             waveformView.setWaveformColor(Color.parseColor("#FFC400"))
+            spokenVerdict = "Inconclusive. Elevated stress response."
         }
+
+        speak(spokenVerdict)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -276,6 +308,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        tts?.stop()
+        tts?.shutdown()
         captureSession?.close()
         cameraDevice?.close()
         imageReader?.close()
