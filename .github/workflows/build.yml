@@ -17,13 +17,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle
+      - name: Accept Android Licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Setup Gradle 8.8
         uses: gradle/actions/setup-gradle@v4
         with:
+          gradle-version: "8.8"
           cache-disabled: true
 
-      - name: Build APK
-        run: gradle assembleDebug
+      - name: Build APK with Wrapper
+        run: |
+          gradle wrapper --gradle-version 8.8
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
